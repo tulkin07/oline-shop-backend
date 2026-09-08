@@ -8,6 +8,8 @@ export class AnalyticsQueryDto {
       'yesterday',
       '7d',
       '30d',
+      'this_week',
+      'last_week',
       'this_month',
       'last_month',
       'this_year',

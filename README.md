@@ -129,6 +129,12 @@ Interactive docs (Bearer auth enabled):
 
 [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
 
+Sahifa-sahifa hujjatlar (o‘quvchilar uchun):
+
+- [Barcha sahifalar indeksi](docs/README.md)
+- [Mijoz sayti — har sahifa va detail](docs/CUSTOMER.md)
+- [Admin panel — har sahifa va detail](docs/ADMIN_PANEL.md)
+
 ## Docker
 
 PostgreSQL + API:
