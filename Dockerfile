@@ -6,7 +6,7 @@ COPY prisma ./prisma
 RUN npm ci
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && test -f dist/main.js
 
 FROM node:20-alpine AS runner
 WORKDIR /app

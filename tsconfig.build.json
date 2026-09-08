@@ -4,6 +4,12 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "resolvePackageJsonExports": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "incremental": false,
+    "noEmit": false,
+    "emitDeclarationOnly": false,
     "rootDir": "./src",
     "outDir": "./dist"
   },
