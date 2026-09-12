@@ -6,6 +6,7 @@ Bu papkada loyihaning **barcha sahifalari** (ro‘yxat + har bir detail) yozilga
 | --- | --- | --- |
 | Mijoz sayti | [CUSTOMER.md](./CUSTOMER.md) | Home, katalog, mahsulot detail, savat, checkout, order detail, profil, manzil detail, wishlist, review |
 | Admin panel | [ADMIN_PANEL.md](./ADMIN_PANEL.md) | Dashboard, order/mijoz/mahsulot/banner detail, katalog, ombor, sozlamalar, audit |
+| Products (o‘quvchilar) | [PRODUCTS.md](./PRODUCTS.md) | Faqat Products page: list, create, update, delete, images, variants |
 
 Baza URL: `https://YOUR-SERVER/api`  
 Lokal: `http://localhost:3000/api`  

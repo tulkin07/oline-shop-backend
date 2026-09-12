@@ -41,6 +41,14 @@ export class AdminCategoriesController {
     return this.categories.findAdmin(query);
   }
 
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Admin category details with parent, children and products',
+  })
+  one(@Param('id') id: string) {
+    return this.categories.findAdminOne(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create category' })
   async create(

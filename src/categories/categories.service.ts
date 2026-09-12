@@ -7,6 +7,7 @@ import { Prisma } from '@prisma/client';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { getPagination, paginated } from '../common/utils/pagination';
 import { uniqueSlug } from '../common/utils/slug';
+import { toNumber } from '../common/utils/money';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -96,6 +97,61 @@ export class CategoriesService {
       }),
     ]);
     return paginated(data, total, page, limit);
+  }
+
+  async findAdminOne(id: string) {
+    const category = await this.prisma.category.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        parent: { select: { id: true, name: true, slug: true } },
+        children: {
+          where: { deletedAt: null },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          include: {
+            _count: {
+              select: {
+                products: { where: { deletedAt: null } },
+                children: { where: { deletedAt: null } },
+              },
+            },
+          },
+        },
+        products: {
+          where: { deletedAt: null },
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            sku: true,
+            price: true,
+            isActive: true,
+            images: { where: { isMain: true }, take: 1, select: { url: true } },
+          },
+        },
+        _count: {
+          select: {
+            products: { where: { deletedAt: null } },
+            children: { where: { deletedAt: null } },
+          },
+        },
+      },
+    });
+    if (!category) {
+      throw new NotFoundException({
+        message: 'Category not found',
+        error: 'NOT_FOUND',
+      });
+    }
+    return {
+      ...category,
+      products: category.products.map((product) => ({
+        ...product,
+        price: toNumber(product.price),
+        image: product.images[0]?.url ?? null,
+      })),
+    };
   }
 
   async update(id: string, dto: UpdateCategoryDto) {

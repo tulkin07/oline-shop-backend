@@ -25,7 +25,7 @@ Rollar: `SUPER_ADMIN`, `ADMIN`, `MANAGER`. O‘chirish / sozlamalar odatda SUPER
 | 5 | Mijozlar | `/admin/customers` | `GET /admin/customers` |
 | 6 | Mijoz detail | `/admin/customers/:id` | `GET /admin/customers/:id` |
 | 7 | Kategoriyalar | `/admin/categories` | `GET /admin/categories` |
-| 8 | Kategoriya create/edit | `/admin/categories/new` yoki `/:id` | `POST` / `PATCH /admin/categories` |
+| 8 | Kategoriya detail / tahrirlash | `/admin/categories/:id` | `GET /admin/categories/:id` |
 | 9 | Brendlar | `/admin/brands` | `GET /admin/brands` |
 | 10 | Brend create/edit | `/admin/brands/new` yoki `/:id` | `POST` / `PATCH /admin/brands` |
 | 11 | Mahsulotlar | `/admin/products` | `GET /admin/products` |
@@ -40,7 +40,7 @@ Rollar: `SUPER_ADMIN`, `ADMIN`, `MANAGER`. O‘chirish / sozlamalar odatda SUPER
 | 20 | Bildirishnomalar | `/admin/notifications` | `GET /admin/notifications` |
 | 21 | Audit log | `/admin/audit-logs` | `GET /admin/audit-logs` |
 
-Alohida `GET /admin/categories/:id` va `GET /admin/brands/:id` yo‘q — ro‘yxatdan tanlab forma to‘ldiriladi. Banner va mahsulotda alohida GET `:id` bor.
+Alohida `GET /admin/brands/:id` yo‘q — ro‘yxatdan tanlab forma to‘ldiriladi. Kategoriya, banner va mahsulotda GET `:id` bor.
 
 ---
 
@@ -409,15 +409,28 @@ Chapda daraxt, o‘ngda forma (yoki alohida create/edit sahifa).
 ## `GET /admin/categories`
 
 - **Qayeri:** chapdagi **kategoriyalar daraxti / jadvali** (nom, product count, aktiv)
-- **Nima uchun:** Smartphones, Laptops… ni ko‘rsatish, qaysi birini tahrirlashni tanlash. Nested `children` keladi.
+- **Nima uchun:** Smartphones, Laptops… ni ko‘rsatish, qaysi birini tahrirlashni tanlash.
 
-Alohida GET `:id` yo‘q — tanlangan node ni listdan oling.
+Qator / node bosilsa → `GET /admin/categories/:id`
 
 ---
 
-# KATEGORIYA CREATE / EDIT (detail)
+# KATEGORIYA DETAIL / TAHRIRLASH
 
 Sahifa: `/admin/categories/new` yoki `/admin/categories/:id`
+
+## `GET /admin/categories/:id`
+
+- **Qayeri:** tahrirlash formasini ochganda + detail sahifa
+- **Nima uchun:** nom, rasm, `parentId`, ichki kategoriyalar, shu bo‘limdagi mahsulotlar
+
+| Sahifa qismi | Field |
+| --- | --- |
+| Forma | `name`, `slug`, `description`, `image`, `parentId`, `isActive`, `sortOrder` |
+| Ota kategoriya | `parent` (`id`, `name`, `slug`) — selectni to‘ldirish |
+| Ichki bo‘limlar | `children[]` |
+| Mahsulotlar (oxirgi 20) | `products[]` (`id`, `name`, `sku`, `price`, `image`) |
+| Sonlar | `_count.products`, `_count.children` |
 
 Forma maydonlari:
 
@@ -1070,6 +1083,7 @@ Bu alohida sahifa emas. **Har bir rasm input** shu API ni chaqiradi.
 | Customers jadval | `GET /admin/customers` |
 | Mijozni ochish | `GET /admin/customers/:id` |
 | Kategoriya daraxti | `GET /admin/categories` |
+| Kategoriya ochish | `GET /admin/categories/:id` |
 | Kategoriya saqlash | `POST` yoki `PATCH /admin/categories` |
 | Brendlar | `GET /admin/brands` |
 | Mahsulotlar jadval | `GET /admin/products` |
