@@ -27,7 +27,7 @@ Rollar: `SUPER_ADMIN`, `ADMIN`, `MANAGER`. O‘chirish / sozlamalar odatda SUPER
 | 7 | Kategoriyalar | `/admin/categories` | `GET /admin/categories` |
 | 8 | Kategoriya detail / tahrirlash | `/admin/categories/:id` | `GET /admin/categories/:id` |
 | 9 | Brendlar | `/admin/brands` | `GET /admin/brands` |
-| 10 | Brend create/edit | `/admin/brands/new` yoki `/:id` | `POST` / `PATCH /admin/brands` |
+| 10 | Brend detail / tahrirlash | `/admin/brands/:id` | `GET /admin/brands/:id` |
 | 11 | Mahsulotlar | `/admin/products` | `GET /admin/products` |
 | 12 | Mahsulot yaratish | `/admin/products/new` | `POST /admin/products` |
 | 13 | Mahsulot detail / tahrirlash | `/admin/products/:id` | `GET /admin/products/:id` |
@@ -40,7 +40,7 @@ Rollar: `SUPER_ADMIN`, `ADMIN`, `MANAGER`. O‘chirish / sozlamalar odatda SUPER
 | 20 | Bildirishnomalar | `/admin/notifications` | `GET /admin/notifications` |
 | 21 | Audit log | `/admin/audit-logs` | `GET /admin/audit-logs` |
 
-Alohida `GET /admin/brands/:id` yo‘q — ro‘yxatdan tanlab forma to‘ldiriladi. Kategoriya, banner va mahsulotda GET `:id` bor.
+Kategoriya, brend, banner va mahsulotda GET `:id` bor.
 
 ---
 
@@ -485,13 +485,24 @@ Sahifa: `/admin/brands`
 - **Qayeri:** Apple, Samsung… **kartalar/jadval**
 - **Nima uchun:** brendlar ro‘yxatini chiqarish (`name`, `logo`, `isActive`, product count)
 
-Alohida GET `:id` yo‘q — kartadan tanlab forma to‘ldiring.
+Karta bosilsa → `GET /admin/brands/:id`
 
 ---
 
-# BREND CREATE / EDIT (detail)
+# BREND DETAIL / TAHRIRLASH
 
 Sahifa: `/admin/brands/new` yoki `/admin/brands/:id`
+
+## `GET /admin/brands/:id`
+
+- **Qayeri:** tahrirlash formasini ochganda
+- **Nima uchun:** bitta brendni to‘liq olish
+
+| Sahifa qismi | Field |
+| --- | --- |
+| Forma | `name`, `slug`, `description`, `logo`, `isActive` |
+| Mahsulotlar (oxirgi 20) | `products[]` (`id`, `name`, `sku`, `price`, `image`) |
+| Son | `_count.products` |
 
 | Input | Field |
 | --- | --- |
@@ -1086,6 +1097,7 @@ Bu alohida sahifa emas. **Har bir rasm input** shu API ni chaqiradi.
 | Kategoriya ochish | `GET /admin/categories/:id` |
 | Kategoriya saqlash | `POST` yoki `PATCH /admin/categories` |
 | Brendlar | `GET /admin/brands` |
+| Brend ochish | `GET /admin/brands/:id` |
 | Mahsulotlar jadval | `GET /admin/products` |
 | Mahsulot ochish | `GET /admin/products/:id` |
 | Mahsulot saqlash (yangi) | `POST /admin/products` |

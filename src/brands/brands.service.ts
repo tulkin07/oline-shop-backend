@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { getPagination, paginated } from '../common/utils/pagination';
 import { uniqueSlug } from '../common/utils/slug';
+import { toNumber } from '../common/utils/money';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
@@ -74,6 +75,45 @@ export class BrandsService {
       }),
     ]);
     return paginated(data, total, page, limit);
+  }
+
+  async findAdminOne(id: string) {
+    const brand = await this.prisma.brand.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        products: {
+          where: { deletedAt: null },
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            sku: true,
+            price: true,
+            isActive: true,
+            images: { where: { isMain: true }, take: 1, select: { url: true } },
+          },
+        },
+        _count: {
+          select: { products: { where: { deletedAt: null } } },
+        },
+      },
+    });
+    if (!brand) {
+      throw new NotFoundException({
+        message: 'Brand not found',
+        error: 'NOT_FOUND',
+      });
+    }
+    return {
+      ...brand,
+      products: brand.products.map((product) => ({
+        ...product,
+        price: toNumber(product.price),
+        image: product.images[0]?.url ?? null,
+      })),
+    };
   }
 
   async update(id: string, dto: UpdateBrandDto) {

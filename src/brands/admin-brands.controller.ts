@@ -40,6 +40,12 @@ export class AdminBrandsController {
     return this.brands.findAdmin(query);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Admin brand details with products' })
+  one(@Param('id') id: string) {
+    return this.brands.findAdminOne(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create brand' })
   async create(
