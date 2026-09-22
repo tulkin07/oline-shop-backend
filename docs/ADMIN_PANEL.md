@@ -179,10 +179,18 @@ Manzildagi `country` / `region` / `city` (yetkazish snapshot). O‘zbekiston do�
 | Ustun | Field |
 | --- | --- |
 | Rasm + nom | `image`, `name` |
-| Total Order | `totalOrders` (sotilgan dona) |
-| Status badge | `status`: `"Stock"` yoki `"Stock out"` |
+| Orders | `orders` (yoki `totalOrders`) |
+| Status badge | `status`: `"Stock"` / `"Low"` / `"Stock out"` |
 | Price | `price` |
 | Details link | `/admin/products/:id` — `id` |
+
+### Quick add — `quickAdd`
+
+| Ekran | Field |
+| --- | --- |
+| Electronic / Fashion / Home qatorlari | `quickAdd.categories[]` (`id`, `name`, `image`, `productsCount`) |
+| Apple iPhone… + narx + Add | `quickAdd.products[]` (`id`, `name`, `image`, `price`) |
+| New tugmasi | API emas — `/admin/products/new` |
 
 ### Top Products — `topProducts[]`
 
@@ -217,10 +225,22 @@ Filterlar alohida (sahifani to‘liq qayta yuklamasdan):
 - **Qayeri:** Sales by Country ro‘yxati
 - **Nima uchun:** faqat shu blokni yangilash
 
-## `GET /admin/dashboard/best-sellers?search=&status=stock&limit=8`
+## `GET /admin/dashboard/best-selling?search=&status=stock&limit=8`
 
-- **Qayeri:** Best Selling jadval + Filter
-- **Nima uchun:** qidiruv va Stock / Stock out. `status=out` — tugaganlar.
+- **Qayeri:** chapdagi **Best selling product** jadval + Filter
+- **Nima uchun:** `name`, `orders`, `status` (`Stock` / `Low` / `Stock out`), `price`
+- Filter: `status=stock` | `low` | `out`
+
+Alias: `GET /admin/dashboard/best-sellers`
+
+## `GET /admin/dashboard/quick-add`
+
+- **Qayeri:** o‘ngdagi **Quick add**
+- **Nima uchun:** kategoriya accordion + mahsulotlar (Add tugmasi uchun `id`, `price`)
+- Kategoriya ochilganda: `?categoryId=CATEGORY_UUID`
+- Qidiruv: `?search=iphone`
+
+**New** → create sahifa, API emas.
 
 ## `GET /admin/dashboard/top-products?search=`
 
@@ -1086,7 +1106,8 @@ Bu alohida sahifa emas. **Har bir rasm input** shu API ni chaqiradi.
 | This week / Last week | `GET /admin/dashboard/weekly-report` |
 | Users 30 min | `GET /admin/dashboard/realtime-users` |
 | Sales by Country | `GET /admin/dashboard/sales-by-country` |
-| Best selling jadval | `GET /admin/dashboard/best-sellers` |
+| Best selling jadval | `GET /admin/dashboard/best-selling` |
+| Quick add | `GET /admin/dashboard/quick-add` |
 | Top Products search | `GET /admin/dashboard/top-products` |
 | Orders jadval | `GET /admin/orders` |
 | Order ochish | `GET /admin/orders/:id` |

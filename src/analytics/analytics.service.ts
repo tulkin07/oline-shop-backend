@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import {
   DashboardProductQueryDto,
+  DashboardQuickAddQueryDto,
   DashboardWeekQueryDto,
 } from './dto/dashboard-query.dto';
 import {
@@ -33,6 +34,7 @@ export class AnalyticsService {
       salesByCountry,
       bestSelling,
       topProducts,
+      quickAdd,
     ] = await Promise.all([
       this.kpis({ range: '7d' }),
       this.weeklyReport({ week: 'this' }),
@@ -40,6 +42,7 @@ export class AnalyticsService {
       this.salesByCountry(),
       this.bestSellers({ limit: 8 }),
       this.topProductsWidget({ limit: 6 }),
+      this.quickAdd({ limit: 8 }),
     ]);
 
     return {
@@ -49,6 +52,7 @@ export class AnalyticsService {
       salesByCountry,
       bestSelling,
       topProducts,
+      quickAdd,
     };
   }
 
@@ -202,7 +206,10 @@ export class AnalyticsService {
         const product = products.get(row.productId);
         if (!product) return null;
         const availableStock = product.stock - product.reservedStock;
-        const status = availableStock > 0 ? 'Stock' : 'Stock out';
+        const status = this.stockStatus(
+          availableStock,
+          product.lowStockThreshold,
+        );
         return {
           id: product.id,
           name: product.name,
@@ -210,6 +217,7 @@ export class AnalyticsService {
           sku: product.sku,
           image: product.images[0]?.url ?? null,
           price: toNumber(product.price),
+          orders: row._sum.quantity ?? 0,
           totalOrders: row._sum.quantity ?? 0,
           revenue: toNumber(row._sum.total ?? 0),
           availableStock,
@@ -222,6 +230,7 @@ export class AnalyticsService {
           return false;
         }
         if (query.status === 'stock' && row.status !== 'Stock') return false;
+        if (query.status === 'low' && row.status !== 'Low') return false;
         if (query.status === 'out' && row.status !== 'Stock out') return false;
         return true;
       })
@@ -262,6 +271,103 @@ export class AnalyticsService {
       image: row.image,
       price: row.price,
     }));
+  }
+
+  async quickAdd(query: DashboardQuickAddQueryDto) {
+    const take = query.limit ?? 8;
+    const search = query.search?.trim();
+    const roots = await this.prisma.category.findMany({
+      where: { deletedAt: null, isActive: true, parentId: null },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        image: true,
+        _count: {
+          select: { products: { where: { deletedAt: null, isActive: true } } },
+        },
+      },
+    });
+    const categories =
+      roots.length > 0
+        ? roots
+        : await this.prisma.category.findMany({
+            where: { deletedAt: null, isActive: true },
+            orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              image: true,
+              _count: {
+                select: {
+                  products: { where: { deletedAt: null, isActive: true } },
+                },
+              },
+            },
+          });
+
+    let categoryId = query.categoryId?.trim();
+    if (categoryId) {
+      const found = await this.prisma.category.findFirst({
+        where: {
+          deletedAt: null,
+          OR: [{ id: categoryId }, { slug: categoryId }],
+        },
+        select: { id: true },
+      });
+      categoryId = found?.id;
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        ...(categoryId ? { categoryId } : {}),
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { sku: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
+      take,
+      orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        sku: true,
+        price: true,
+        categoryId: true,
+        category: { select: { id: true, name: true, slug: true } },
+        images: { where: { isMain: true }, take: 1, select: { url: true } },
+      },
+    });
+
+    return {
+      categories: categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        image: category.image,
+        productsCount: category._count.products,
+      })),
+      selectedCategoryId: categoryId ?? null,
+      products: products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        sku: product.sku,
+        image: product.images[0]?.url ?? null,
+        price: toNumber(product.price),
+        categoryId: product.categoryId,
+        categoryName: product.category.name,
+      })),
+    };
   }
 
   async sales(query: AnalyticsQueryDto) {
@@ -651,10 +757,20 @@ export class AnalyticsService {
         price: true,
         stock: true,
         reservedStock: true,
+        lowStockThreshold: true,
         images: { where: { isMain: true }, take: 1, select: { url: true } },
       },
     });
     return new Map(products.map((product) => [product.id, product]));
+  }
+
+  private stockStatus(
+    available: number,
+    threshold: number,
+  ): 'Stock' | 'Low' | 'Stock out' {
+    if (available <= 0) return 'Stock out';
+    if (available <= threshold) return 'Low';
+    return 'Stock';
   }
 
   private async topSelling(take: number) {

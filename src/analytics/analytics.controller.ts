@@ -8,6 +8,7 @@ import { AnalyticsService } from './analytics.service';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import {
   DashboardProductQueryDto,
+  DashboardQuickAddQueryDto,
   DashboardWeekQueryDto,
 } from './dto/dashboard-query.dto';
 
@@ -67,6 +68,24 @@ export class AnalyticsController {
   })
   bestSellers(@Query() query: DashboardProductQueryDto) {
     return this.analytics.bestSellers(query);
+  }
+
+  @Get('dashboard/best-selling')
+  @ApiOperation({
+    summary:
+      'Best selling product table: name, orders, Stock/Low/Stock out, price',
+  })
+  bestSelling(@Query() query: DashboardProductQueryDto) {
+    return this.analytics.bestSellers(query);
+  }
+
+  @Get('dashboard/quick-add')
+  @ApiOperation({
+    summary:
+      'Quick add widget: category accordion + products with price for Add button',
+  })
+  quickAdd(@Query() query: DashboardQuickAddQueryDto) {
+    return this.analytics.quickAdd(query);
   }
 
   @Get('dashboard/top-products')

@@ -1,4 +1,10 @@
-import { PrismaClient, AdminRole, ReviewStatus } from '@prisma/client';
+import {
+  ActivityType,
+  AdminRole,
+  OrderStatus,
+  PrismaClient,
+  ReviewStatus,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -569,7 +575,268 @@ async function main() {
     });
   }
 
+  await seedDashboardDemo(createdProducts, customer, demoPassword);
+
   console.log(`Seeded admin ${admin.email} and ${createdProducts.length} products`);
+}
+
+function startOfWeekSunday(date: Date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+function atHour(base: Date, hour: number) {
+  const d = new Date(base);
+  d.setHours(hour, 15, 0, 0);
+  return d;
+}
+
+async function seedDashboardDemo(
+  createdProducts: Array<{
+    id: string;
+    name: string;
+    sku: string;
+    price: unknown;
+  }>,
+  primaryCustomer: { id: string; firstName: string; lastName: string; email: string; phone: string },
+  demoPassword: string,
+) {
+  if (createdProducts.length < 5) {
+    return;
+  }
+
+  await prisma.product.update({
+    where: { sku: 'SONY-ZVE10' },
+    data: { stock: 2, reservedStock: 0, lowStockThreshold: 5 },
+  }).catch(() => undefined);
+  await prisma.product.update({
+    where: { sku: 'HP-DJ2720' },
+    data: { stock: 0, reservedStock: 0 },
+  }).catch(() => undefined);
+  await prisma.product.update({
+    where: { sku: 'IPADAIR11' },
+    data: { stock: 4, reservedStock: 0, lowStockThreshold: 5 },
+  }).catch(() => undefined);
+
+  const regions = [
+    { region: 'Toshkent', city: 'Toshkent', district: 'Yunusobod' },
+    { region: 'Samarqand', city: 'Samarqand', district: 'Registon' },
+    { region: 'Buxoro', city: 'Buxoro', district: 'Markaz' },
+    { region: 'Andijon', city: 'Andijon', district: 'Bogishamol' },
+    { region: 'Fargona', city: "Farg'ona", district: 'Kirguli' },
+    { region: 'Namangan', city: 'Namangan', district: 'Davlatobod' },
+  ];
+
+  const extraCustomers = [
+    { firstName: 'Malika', lastName: 'Karimova', email: 'malika@example.com', phone: '+998901112244' },
+    { firstName: 'Jasur', lastName: 'Aliyev', email: 'jasur@example.com', phone: '+998901112255' },
+    { firstName: 'Nilufar', lastName: 'Usmonova', email: 'nilufar@example.com', phone: '+998901112266' },
+    { firstName: 'Sardor', lastName: 'Toshmatov', email: 'sardor@example.com', phone: '+998901112277' },
+    { firstName: 'Aziza', lastName: 'Saidova', email: 'aziza@example.com', phone: '+998901112288' },
+  ];
+
+  const customers = [primaryCustomer];
+  for (const item of extraCustomers) {
+    const user = await prisma.user.upsert({
+      where: { email: item.email },
+      update: {},
+      create: {
+        ...item,
+        password: demoPassword,
+        cart: { create: {} },
+        wishlist: { create: {} },
+      },
+    });
+    customers.push(user);
+  }
+
+  const now = new Date();
+  const thisSunday = startOfWeekSunday(now);
+  const lastSunday = new Date(thisSunday);
+  lastSunday.setDate(lastSunday.getDate() - 7);
+
+  type DemoOrder = {
+    number: string;
+    day: Date;
+    status: OrderStatus;
+    productIndex: number;
+    qty: number;
+    regionIndex: number;
+    customerIndex: number;
+  };
+
+  const demoOrders: DemoOrder[] = [];
+  let seq = 1;
+
+  for (let i = 0; i < 7; i += 1) {
+    const day = new Date(lastSunday);
+    day.setDate(lastSunday.getDate() + i);
+    demoOrders.push({
+      number: `ORD-DASH-${String(seq).padStart(4, '0')}`,
+      day,
+      status: OrderStatus.DELIVERED,
+      productIndex: i % 6,
+      qty: 3 + (i % 4),
+      regionIndex: i % regions.length,
+      customerIndex: i % customers.length,
+    });
+    seq += 1;
+  }
+
+  const daysThisWeek = Math.min(now.getDay() + 1, 7);
+  for (let i = 0; i < Math.max(daysThisWeek, 5); i += 1) {
+    const day = new Date(thisSunday);
+    day.setDate(thisSunday.getDate() + (i % Math.max(daysThisWeek, 1)));
+    if (day > now) {
+      day.setTime(now.getTime());
+    }
+    demoOrders.push({
+      number: `ORD-DASH-${String(seq).padStart(4, '0')}`,
+      day,
+      status: OrderStatus.DELIVERED,
+      productIndex: (i + 2) % 7,
+      qty: 2 + (i % 5),
+      regionIndex: (i + 1) % regions.length,
+      customerIndex: (i + 1) % customers.length,
+    });
+    seq += 1;
+  }
+
+  for (let i = 0; i < 5; i += 1) {
+    const day = new Date(now);
+    day.setDate(now.getDate() - (i + 1));
+    demoOrders.push({
+      number: `ORD-DASH-${String(seq).padStart(4, '0')}`,
+      day,
+      status: OrderStatus.DELIVERED,
+      productIndex: (i + 3) % 8,
+      qty: 5 + i,
+      regionIndex: i % regions.length,
+      customerIndex: (i + 2) % customers.length,
+    });
+    seq += 1;
+  }
+
+  for (let i = 0; i < 5; i += 1) {
+    demoOrders.push({
+      number: `ORD-DASH-PEND-${i + 1}`,
+      day: now,
+      status: OrderStatus.PENDING,
+      productIndex: i % createdProducts.length,
+      qty: 1,
+      regionIndex: i % regions.length,
+      customerIndex: i % customers.length,
+    });
+  }
+
+  for (let i = 0; i < 5; i += 1) {
+    const day = new Date(now);
+    day.setDate(now.getDate() - i);
+    demoOrders.push({
+      number: `ORD-DASH-CANC-${i + 1}`,
+      day,
+      status: OrderStatus.CANCELLED,
+      productIndex: (i + 1) % createdProducts.length,
+      qty: 1,
+      regionIndex: i % regions.length,
+      customerIndex: (i + 3) % customers.length,
+    });
+  }
+
+  for (const demo of demoOrders) {
+    const product = createdProducts[demo.productIndex] ?? createdProducts[0];
+    const user = customers[demo.customerIndex] ?? customers[0];
+    const place = regions[demo.regionIndex];
+    const price = Number(product.price);
+    const total = price * demo.qty;
+    const createdAt = atHour(demo.day, 11 + (demo.qty % 6));
+
+    await prisma.order.upsert({
+      where: { orderNumber: demo.number },
+      update: {
+        status: demo.status,
+        createdAt,
+        addressSnapshot: {
+          title: 'Home',
+          region: place.region,
+          city: place.city,
+          district: place.district,
+          street: 'Mustaqillik',
+          house: '12',
+        },
+      },
+      create: {
+        orderNumber: demo.number,
+        userId: user.id,
+        status: demo.status,
+        subtotal: total,
+        deliveryFee: 25000,
+        total: total + 25000,
+        createdAt,
+        addressSnapshot: {
+          title: 'Home',
+          region: place.region,
+          city: place.city,
+          district: place.district,
+          street: 'Mustaqillik',
+          house: '12',
+        },
+        customerSnapshot: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+        },
+        items: {
+          create: {
+            productId: product.id,
+            productName: product.name,
+            productSku: product.sku,
+            productImage: `https://placehold.co/800x800?text=${encodeURIComponent(product.name)}`,
+            price,
+            quantity: demo.qty,
+            total,
+          },
+        },
+        statusHistory: {
+          create: {
+            status: demo.status,
+            comment: 'Dashboard demo order',
+            changedBy: 'SYSTEM',
+          },
+        },
+      },
+    });
+  }
+
+  await prisma.userActivity.deleteMany({
+    where: {
+      metadata: {
+        path: ['seed'],
+        equals: 'dashboard',
+      },
+    },
+  });
+
+  const activityMinutes = [1, 4, 8, 12, 16, 20, 24];
+  for (let i = 0; i < activityMinutes.length; i += 1) {
+    const user = customers[i % customers.length];
+    const createdAt = new Date(Date.now() - activityMinutes[i] * 60 * 1000);
+    await prisma.userActivity.create({
+      data: {
+        userId: user.id,
+        type: ActivityType.LOGIN,
+        metadata: { seed: 'dashboard' },
+        createdAt,
+      },
+    });
+  }
+
+  console.log(
+    `Seeded dashboard demo: ${demoOrders.length} orders, ${customers.length} customers, ${regions.length} regions`,
+  );
 }
 
 main()
