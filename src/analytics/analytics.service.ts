@@ -190,13 +190,7 @@ export class AnalyticsService {
 
   async bestSellers(query: DashboardProductQueryDto) {
     const take = query.limit ?? 8;
-    const grouped = await this.prisma.orderItem.groupBy({
-      by: ['productId'],
-      where: { order: { status: OrderStatus.DELIVERED } },
-      _sum: { quantity: true, total: true },
-      orderBy: { _sum: { quantity: 'desc' } },
-      take: 50,
-    });
+    const grouped = await this.soldByProduct(50);
     const products = await this.productsByIds(
       grouped.map((row) => row.productId),
     );
@@ -217,9 +211,9 @@ export class AnalyticsService {
           sku: product.sku,
           image: product.images[0]?.url ?? null,
           price: toNumber(product.price),
-          orders: row._sum.quantity ?? 0,
-          totalOrders: row._sum.quantity ?? 0,
-          revenue: toNumber(row._sum.total ?? 0),
+          orders: row.quantity,
+          totalOrders: row.quantity,
+          revenue: row.total,
           availableStock,
           status,
         };
@@ -773,14 +767,26 @@ export class AnalyticsService {
     return 'Stock';
   }
 
-  private async topSelling(take: number) {
-    const grouped = await this.prisma.orderItem.groupBy({
-      by: ['productId'],
+  private async soldByProduct(take?: number) {
+    const items = await this.prisma.orderItem.findMany({
       where: { order: { status: OrderStatus.DELIVERED } },
-      _sum: { quantity: true, total: true },
-      orderBy: { _sum: { quantity: 'desc' } },
-      take,
+      select: { productId: true, quantity: true, total: true },
     });
+    const totals = new Map<string, { quantity: number; total: number }>();
+    for (const item of items) {
+      const current = totals.get(item.productId) ?? { quantity: 0, total: 0 };
+      current.quantity += item.quantity;
+      current.total += toNumber(item.total);
+      totals.set(item.productId, current);
+    }
+    return [...totals.entries()]
+      .map(([productId, value]) => ({ productId, ...value }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, take ?? totals.size);
+  }
+
+  private async topSelling(take: number) {
+    const grouped = await this.soldByProduct(take);
     const products = await this.prisma.product.findMany({
       where: { id: { in: grouped.map((g) => g.productId) } },
       select: { id: true, name: true, slug: true, sku: true, price: true },
@@ -793,8 +799,8 @@ export class AnalyticsService {
             price: toNumber(map.get(row.productId)!.price),
           }
         : null,
-      unitsSold: row._sum.quantity ?? 0,
-      revenue: toNumber(row._sum.total ?? 0),
+      unitsSold: row.quantity,
+      revenue: row.total,
     }));
   }
 }
