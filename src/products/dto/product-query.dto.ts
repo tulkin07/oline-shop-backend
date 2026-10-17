@@ -1,8 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
+// NOTE: flag filters are strings ('true'/'false'). Boolean-typed query DTO
+// fields are converted by class-transformer with Boolean(value), which turns
+// the string "false" into `true` and silently inverts the filter.
 export class ProductQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -31,27 +34,23 @@ export class ProductQueryDto extends PaginationQueryDto {
   @IsString()
   stock?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: ['true', 'false'] })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  featured?: boolean;
+  @IsIn(['true', 'false'])
+  featured?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: ['true', 'false'] })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isNew?: boolean;
+  @IsIn(['true', 'false'])
+  isNew?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: ['true', 'false'] })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  popular?: boolean;
+  @IsIn(['true', 'false'])
+  popular?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: ['true', 'false'] })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isActive?: boolean;
+  @IsIn(['true', 'false'])
+  isActive?: string;
 }

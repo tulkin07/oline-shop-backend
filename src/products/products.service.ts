@@ -453,10 +453,11 @@ export class ProductsService {
         { lowStockThreshold: { gt: 0 } },
       ];
     }
-    if (query.featured === true || query.sort === 'featured') where.isFeatured = true;
-    if (query.isNew === true) where.isNew = true;
-    if (query.popular === true) where.isPopular = true;
-    if (query.isActive !== undefined && !publicOnly) where.isActive = query.isActive;
+    if (query.featured === 'true' || query.sort === 'featured') where.isFeatured = true;
+    if (query.isNew === 'true') where.isNew = true;
+    if (query.popular === 'true') where.isPopular = true;
+    // Only narrows when explicitly 'true'; use status=inactive to list inactive.
+    if (query.isActive === 'true' && !publicOnly) where.isActive = true;
     if (query.status === 'active') where.isActive = true;
     if (query.status === 'inactive') where.isActive = false;
     return where;
