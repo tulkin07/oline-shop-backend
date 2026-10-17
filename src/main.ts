@@ -7,6 +7,7 @@ import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { UnprocessableEntityException } from '@nestjs/common';
+import { parseCorsOrigin, setUploadsHeaders } from './common/http/security';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -15,12 +16,18 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.set('trust proxy', 1);
+  // Helmet keeps Cross-Origin-Resource-Policy: same-origin for API responses.
   app.use(helmet());
   app.enableCors({
-    origin: config.get<string>('corsOrigin') || '*',
+    origin: parseCorsOrigin(config.get<string>('corsOrigin')),
     credentials: true,
   });
-  app.useStaticAssets(join(process.cwd(), uploadDir), { prefix: '/uploads/' });
+  // Uploaded images are embedded by the frontend from another origin, so they
+  // override CORP to cross-origin (the only header changed for /uploads).
+  app.useStaticAssets(join(process.cwd(), uploadDir), {
+    prefix: '/uploads/',
+    setHeaders: setUploadsHeaders,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

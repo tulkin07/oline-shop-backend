@@ -37,7 +37,7 @@ cp .env.example .env
 | `JWT_EXPIRES_IN` | Access token TTL (example: `15m`) |
 | `JWT_REFRESH_EXPIRES_IN` | Refresh token TTL (example: `7d`) |
 | `PORT` | HTTP port (`3000`) |
-| `CORS_ORIGIN` | Allowed origin (`*` for local development) |
+| `CORS_ORIGIN` | Allowed frontend origins, comma-separated (`https://shop.example.com,http://localhost:5173`); `*` for local development. Files under `/uploads` are always served with `Cross-Origin-Resource-Policy: cross-origin` so images render from any frontend domain |
 | `UPLOAD_DIR` | Local upload directory (`./uploads`) |
 
 Do not commit real secrets. `.env` is gitignored.
