@@ -497,6 +497,16 @@ model HomePromo {
   @@index([type])
 }
 
+model UploadFile {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  originalName String
+  mimeType     String
+  size         Int
+  data         Bytes
+  createdAt    DateTime @default(now())
+}
+
 model UserActivity {
   id        String       @id @default(uuid())
   userId    String

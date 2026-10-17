@@ -8,6 +8,8 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { UnprocessableEntityException } from '@nestjs/common';
 import { parseCorsOrigin, setUploadsHeaders } from './common/http/security';
+import { PrismaService } from './prisma/prisma.service';
+import { createUploadsMiddleware } from './uploads/uploads.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -24,6 +26,10 @@ async function bootstrap() {
   });
   // Uploaded images are embedded by the frontend from another origin, so they
   // override CORP to cross-origin (the only header changed for /uploads).
+  // Files uploaded after the move to database storage are served from Postgres
+  // (Render's disk is ephemeral); the static handler remains as a fallback for
+  // files that only exist on the local disk.
+  app.use('/uploads', createUploadsMiddleware(app.get(PrismaService)));
   app.useStaticAssets(join(process.cwd(), uploadDir), {
     prefix: '/uploads/',
     setHeaders: setUploadsHeaders,

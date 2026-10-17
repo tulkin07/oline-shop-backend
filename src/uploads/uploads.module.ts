@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { LocalStorageProvider } from './local-storage.provider';
+import { DatabaseStorageProvider } from './database-storage.provider';
 import { StorageProvider } from './storage.provider';
 import { CustomerUploadsController } from './customer-uploads.controller';
 import { FileUploadController } from './file-upload.controller';
@@ -10,7 +10,7 @@ import { UploadsService } from './uploads.service';
   controllers: [UploadsController, CustomerUploadsController, FileUploadController],
   providers: [
     UploadsService,
-    { provide: StorageProvider, useClass: LocalStorageProvider },
+    { provide: StorageProvider, useClass: DatabaseStorageProvider },
   ],
   exports: [UploadsService, StorageProvider],
 })
