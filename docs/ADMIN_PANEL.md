@@ -33,6 +33,8 @@ Rollar: `SUPER_ADMIN`, `ADMIN`, `MANAGER`. O‘chirish / sozlamalar odatda SUPER
 | 13 | Mahsulot detail / tahrirlash | `/admin/products/:id` | `GET /admin/products/:id` |
 | 14 | Bannerlar | `/admin/banners` | `GET /admin/banners` |
 | 15 | Banner detail | `/admin/banners/:id` | `GET /admin/banners/:id` |
+| 15a | Home promo kartalar | `/admin/home-promos` | `GET /admin/home-promos` |
+| 15b | Home promo detail | `/admin/home-promos/:id` | `GET /admin/home-promos/:id` |
 | 16 | Reviewlar | `/admin/reviews` | `GET /admin/reviews` |
 | 17 | Ombor | `/admin/inventory` | `GET /admin/inventory` |
 | 18 | Sozlamalar | `/admin/settings` | `GET /admin/settings` |
@@ -873,6 +875,65 @@ Rasm: avval `POST /admin/uploads?folder=banners`, keyin `image` fieldga url.
 
 ---
 
+# HOME PROMO KARTALAR (hero bannerdan pastdagi blok)
+
+Sahifa: `/admin/home-promos`, `/admin/home-promos/new`, `/admin/home-promos/:id`
+
+Mijoz saytida `GET /home-promos` orqali hero bannerdan pastda chiqadi. Rollar: SUPER_ADMIN, ADMIN, MANAGER (delete — faqat SUPER_ADMIN, ADMIN).
+
+| `type` | Karta | Majburiy |
+|--------|-------|----------|
+| `PROMO` | Katta rasmli karta | `title`, `image` |
+| `CATEGORY` | Kategoriya mahsulotlari grid (`productsLimit`, default 4; ichki kategoriyalar ham kiradi) | `title`, `categoryId` |
+| `BANNER` | Kichik rasmli banner | `title`, `image` |
+| `DEAL` | Bitta chegirmadagi mahsulot | `title`, `productId` |
+
+## `GET /admin/home-promos?page=1&limit=20&type=CATEGORY&status=active&search=`
+
+- **Qayeri:** ro‘yxat jadvali. Har bir elementda `category` (`id`, `name`, `slug`) va `product` (narx bilan) bor.
+
+## `GET /admin/home-promos/:id`
+
+- **Qayeri:** tahrirlash formasini to‘ldirish.
+
+## `POST /admin/home-promos`
+
+```json
+{
+  "type": "DEAL",
+  "title": "Deal of the day",
+  "productId": "<product uuid>",
+  "badgeText": "-250 000 so‘m",
+  "buttonText": "Shop Now",
+  "sortOrder": 5,
+  "isActive": true,
+  "startDate": "2026-12-20T00:00:00.000Z",
+  "endDate": "2027-01-10T23:59:59.000Z"
+}
+```
+
+Boshqa fieldlar (hammasi ixtiyoriy): `subtitle`, `image`, `link`, `categoryId`, `productsLimit` (1–12).
+`categoryId` — `GET /admin/categories` dan, `productId` — `GET /admin/products` dan.
+Rasm: avval `POST /upload` (FormData `file`) yoki `POST /admin/uploads?folder=banners`, keyin url ni `image` ga qo‘ying.
+
+Xatolar: `400` — type uchun majburiy field yo‘q yoki kategoriya/mahsulot topilmadi.
+
+## `PATCH /admin/home-promos/:id`
+
+- Create fieldlari, hammasi ixtiyoriy.
+
+## `PATCH /admin/home-promos/:id/status`
+
+```json
+{ "isActive": false }
+```
+
+## `DELETE /admin/home-promos/:id`
+
+- Soft delete (saytdan yo‘qoladi).
+
+---
+
 # REVIEWLAR
 
 Sahifa: `/admin/reviews`  
@@ -1127,6 +1188,8 @@ Bu alohida sahifa emas. **Har bir rasm input** shu API ni chaqiradi.
 | Variant qo‘shish | `POST /admin/products/:id/variants` |
 | Banner ochish | `GET /admin/banners/:id` |
 | Banner On/Off | `PATCH /admin/banners/:id/status` |
+| Home promo karta qo‘shish | `POST /admin/home-promos` |
+| Home promo On/Off | `PATCH /admin/home-promos/:id/status` |
 | Review tasdiq | `PATCH /admin/reviews/:id/approve` |
 | Stock +10 | `POST /admin/inventory/adjust` |
 | Sozlamalar saqlash | `PATCH /admin/settings` |

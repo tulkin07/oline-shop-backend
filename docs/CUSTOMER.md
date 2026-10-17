@@ -6,7 +6,7 @@ Har bir API uchun: **qaysi sahifa**, **ekrandagi aniq joy**, **nima uchun**.
 | --- | --- | --- | --- |
 | 1 | Ro‘yxatdan o‘tish | `/register` | `POST /auth/register` |
 | 2 | Kirish | `/login` | `POST /auth/login` |
-| 3 | Bosh sahifa | `/` | `GET /banners` + `GET /products` |
+| 3 | Bosh sahifa | `/` | `GET /banners` + `GET /home-promos` + `GET /products` |
 | 4 | Kategoriyalar | `/categories` | `GET /categories` |
 | 5 | Kategoriya detail | `/categories/:id` | `GET /categories/:id` |
 | 6 | Brendlar | `/brands` | `GET /brands` |
@@ -153,6 +153,40 @@ Sahifa ochilishi bilan parallel chaqiring.
 - **Qayeri:** eng tepadagi **hero slider** (katta rasm, title, tugma)
 - **Nima uchun:** faqat aktiv va hozirgi sanadagi bannerlar keladi. `image`, `title`, `subtitle`, `buttonText`, `link`.
 - Token shart emas.
+
+## `GET /home-promos`
+
+- **Qayeri:** hero bannerdan **pastdagi** kartalar qatori (promo karta, kategoriya grid, kichik bannerlar, chegirma karta)
+- **Nima uchun:** admin boshqaradi. Faqat aktiv va sana oralig‘idagilar, `sortOrder` bo‘yicha keladi. O‘chirilgan/nofaol kategoriya yoki mahsulotga bog‘langan karta qaytmaydi.
+- Token shart emas.
+
+Har bir elementda `type` bor, frontend shunga qarab karta chizadi:
+
+| `type` | Karta | Ishlatiladigan fieldlar |
+|--------|-------|-------------------------|
+| `PROMO` | Katta rasmli karta (“New Year! New Tech” + Shop Now) | `title`, `image`, `buttonText`, `link` |
+| `CATEGORY` | 2x2 mahsulot grid (“Gaming accessories” + See more) | `title`, `buttonText`, `link`, `category`, `products[]` |
+| `BANNER` | Kichik rasmli banner (“More details” / “Shop Now”) | `title`, `image`, `buttonText`, `link` |
+| `DEAL` | Bitta chegirmadagi mahsulot (badge, narx, Shop Now) | `title`, `badgeText`, `buttonText`, `link`, `product` |
+
+`products[]` va `product` elementi: `id`, `name`, `slug`, `price`, `oldPrice`, `discountPercent`, `discountAmount` (oldPrice − price), `inStock`, `image`.
+
+`DEAL` da `badgeText` bo‘sh bo‘lsa, badgeni `product.discountAmount` dan chiqaring (masalan “-10 000 so‘m”). `link` berilmagan bo‘lsa avtomatik `/categories/:slug` yoki `/products/:slug` bo‘ladi.
+
+```json
+{
+  "success": true,
+  "data": [
+    { "type": "PROMO", "title": "New Year! New Tech", "image": "https://...", "buttonText": "Shop Now", "link": "/products?isNew=true" },
+    { "type": "CATEGORY", "title": "Gaming accessories", "buttonText": "See more", "link": "/categories/gaming",
+      "category": { "id": "...", "name": "Gaming", "slug": "gaming" },
+      "products": [{ "id": "...", "name": "Headset", "price": 500000, "image": "https://..." }] },
+    { "type": "BANNER", "title": "Be the winner", "image": "https://...", "buttonText": "More details", "link": "/products?category=laptops" },
+    { "type": "DEAL", "title": "Deal of the day", "badgeText": null, "buttonText": "Shop Now",
+      "product": { "name": "Philips 4K Ambilight TV", "price": 750.99, "oldPrice": 1000.99, "discountAmount": 250 } }
+  ]
+}
+```
 
 ## `GET /categories`
 

@@ -510,6 +510,68 @@ async function main() {
     });
   }
 
+  const homePromoCount = await prisma.homePromo.count();
+  if (homePromoCount === 0) {
+    const gridCategory = await prisma.category.findFirst({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        products: { some: { deletedAt: null, isActive: true } },
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+    const dealProduct = await prisma.product.findFirst({
+      where: { deletedAt: null, isActive: true, oldPrice: { not: null } },
+      orderBy: { discountPercent: 'desc' },
+    });
+    await prisma.homePromo.createMany({
+      data: [
+        {
+          type: 'PROMO',
+          title: 'New Year! New Tech',
+          subtitle: 'Laptops and smartphones winter collection',
+          image: 'https://placehold.co/600x400?text=New+Year+New+Tech',
+          buttonText: 'Shop Now',
+          link: '/products?isNew=true',
+          sortOrder: 1,
+        },
+        {
+          type: 'CATEGORY',
+          title: gridCategory?.name ?? 'Gaming accessories',
+          buttonText: 'See more',
+          categoryId: gridCategory?.id,
+          productsLimit: 4,
+          sortOrder: 2,
+        },
+        {
+          type: 'BANNER',
+          title: 'Be the winner',
+          subtitle: 'Gaming laptops from 19 990 000 UZS',
+          image: 'https://placehold.co/300x200/b00/fff?text=BE+THE+WINNER',
+          buttonText: 'More details',
+          link: '/products?category=laptops',
+          sortOrder: 3,
+        },
+        {
+          type: 'BANNER',
+          title: 'PlayStation 5 Slim',
+          subtitle: 'Next-gen gaming',
+          image: 'https://placehold.co/300x200/003/fff?text=PS5+Slim',
+          buttonText: 'Shop Now',
+          link: '/products?category=gaming',
+          sortOrder: 4,
+        },
+        {
+          type: 'DEAL',
+          title: 'Deal of the day',
+          buttonText: 'Shop Now',
+          productId: dealProduct?.id,
+          sortOrder: 5,
+        },
+      ],
+    });
+  }
+
   const sampleProduct = createdProducts[0];
   if (sampleProduct) {
     const order = await prisma.order.upsert({
