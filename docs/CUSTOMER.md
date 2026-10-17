@@ -59,7 +59,6 @@ Ekran: ism, familiya, email, telefon, parol, **Ro‘yxatdan o‘tish** tugmasi.
 Javobdan `accessToken`, `refreshToken`, `user` ni saqlang. Keyin Home ga o‘ting.
 
 ---
-
 # 2. LOGIN
 
 Sahifa: `/login`  
