@@ -790,7 +790,10 @@ export class AnalyticsService {
 
   private async soldByProduct(take?: number) {
     const items = await this.prisma.orderItem.findMany({
-      where: { order: { status: OrderStatus.DELIVERED } },
+      where: {
+        order: { status: OrderStatus.DELIVERED },
+        product: { deletedAt: null },
+      },
       select: { productId: true, quantity: true, total: true },
     });
     const totals = new Map<string, { quantity: number; total: number }>();
