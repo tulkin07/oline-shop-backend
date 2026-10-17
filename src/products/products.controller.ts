@@ -19,6 +19,22 @@ export class ProductsController {
   }
 
   @Public()
+  @Get('top')
+  @ApiOperation({ summary: 'Top products (popular flag, ordered by views)' })
+  top(@Query() query: ProductQueryDto) {
+    return this.products.findPublicTop(query);
+  }
+
+  @Public()
+  @Get('best-selling')
+  @ApiOperation({
+    summary: 'Best-selling products (most sold, excluding top/popular ones)',
+  })
+  bestSelling(@Query() query: ProductQueryDto) {
+    return this.products.findPublicBestSelling(query);
+  }
+
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get product details by id or slug' })
   one(@Param('id') id: string) {

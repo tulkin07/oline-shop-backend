@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, ReviewStatus } from '@prisma/client';
+import { OrderStatus, Prisma, ReviewStatus } from '@prisma/client';
 import { getPagination, paginated, parseSortOrder } from '../common/utils/pagination';
+import { roundMoney } from '../common/utils/money';
 import { uniqueSlug } from '../common/utils/slug';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, ProductImageInputDto, ProductVariantInputDto } from './dto/create-product.dto';
@@ -134,6 +135,79 @@ export class ProductsService {
       data: { viewsCount: { increment: 1 } },
     });
     return serializeProduct({ ...product, viewsCount: product.viewsCount + 1 });
+  }
+
+  async findPublicTop(query: ProductQueryDto) {
+    const { skip, take, page, limit } = getPagination(query);
+    const where = await this.buildWhere(query, true);
+    where.isPopular = true;
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take,
+        orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
+        include: {
+          ...productInclude,
+          reviews: {
+            where: { status: ReviewStatus.APPROVED },
+            select: { rating: true },
+          },
+        },
+      }),
+    ]);
+    return paginated(rows.map((p) => serializeProduct(p)), total, page, limit);
+  }
+
+  async findPublicBestSelling(query: ProductQueryDto) {
+    const { skip, take, page, limit } = getPagination(query);
+    const where = await this.buildWhere(query, true);
+    where.isPopular = false;
+
+    const sold = await this.soldByProductId();
+    const [rows, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: {
+          ...productInclude,
+          reviews: {
+            where: { status: ReviewStatus.APPROVED },
+            select: { rating: true },
+          },
+        },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    rows.sort(
+      (a, b) =>
+        (sold.get(b.id)?.quantity ?? 0) - (sold.get(a.id)?.quantity ?? 0) ||
+        b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+    const sliced = rows.slice(skip, skip + take).map((p) => ({
+      ...serializeProduct(p),
+      totalSold: sold.get(p.id)?.quantity ?? 0,
+      soldRevenue: roundMoney(sold.get(p.id)?.total ?? 0),
+    }));
+    return paginated(sliced, total, page, limit);
+  }
+
+  private async soldByProductId() {
+    const items = await this.prisma.orderItem.findMany({
+      where: {
+        order: { status: OrderStatus.DELIVERED },
+      },
+      select: { productId: true, quantity: true, total: true },
+    });
+    const map = new Map<string, { quantity: number; total: number }>();
+    for (const item of items) {
+      const row = map.get(item.productId) ?? { quantity: 0, total: 0 };
+      row.quantity += item.quantity;
+      row.total += Number(item.total);
+      map.set(item.productId, row);
+    }
+    return map;
   }
 
   async findAdminOne(id: string) {

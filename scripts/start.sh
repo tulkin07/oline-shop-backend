@@ -1,9 +1,12 @@
 #!/bin/sh
 set -e
 
-# Prisma waits only 10s for the migration advisory lock. On Neon free tier the
-# compute may be suspended (cold start) or a previous Render instance may still
-# hold the lock, which surfaces as P1002. Retry a few times before giving up.
+# Prisma waits only 10s for the migration advisory lock. On Neon the pooler
+# (pgbouncer) keeps killed sessions alive, so an orphaned backend can hold the
+# advisory lock forever and every deploy fails with P1002. Render deploys run
+# one instance at a time, so the lock is not needed - disable it and keep the
+# retry loop for cold-start timeouts.
+export PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK="${PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK:-1}"
 MIGRATE_ATTEMPTS="${MIGRATE_ATTEMPTS:-6}"
 MIGRATE_RETRY_DELAY="${MIGRATE_RETRY_DELAY:-10}"
 

@@ -301,6 +301,22 @@ Query — filtr panelining har bir elementi:
 
 Karta bosilsa → product detail.
 
+## `GET /products/top` — Top Products
+
+- **Qayeri:** bosh sahifadagi **“Top Products”** qatori (hero pastidagi vitrina)
+- **Nima uchun:** faqat `isPopular` belgilangan, `viewsCount` bo‘yicha teskori saralangan mahsulotlar.
+- Query: katalognikidek (`search`, `category`, `brand`, `minPrice/maxPrice`, `stock`, `page`, `limit`).
+- Javob: `GET /products` bilan bir xil struktura (`data[]` + `meta`).
+
+## `GET /products/best-selling` — Best selling
+
+- **Qayeri:** bosh sahifadagi **“Best selling product”** qatori
+- **Nima uchun:** DELIVERED buyurtmalarda eng ko‘p sotilgan mahsulotlar. **`isPopular` (top) mahsulotlar kirmaydi** — toplar faqat `/products/top` da.
+- Har bir elementga qo‘shimcha: `totalSold` (sotilgan dona), `soldRevenue` (jami summa).
+- Query: katalognikidek (`search`, `category`, `brand`, `page`, `limit`).
+
+> Eslatma: barcha mahsulotlar (top va best-selling bilan birga) asosiy `GET /products` da ham mavjud — u umumiy katalog.
+
 ## `GET /categories` va `GET /brands`
 
 - **Qayeri:** chapdagi filter checkboxlari
