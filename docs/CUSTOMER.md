@@ -290,7 +290,7 @@ Query — filtr panelining har bir elementi:
 | --- | --- | --- |
 | Qidiruv input | `search=iphone` | nom/sku bo‘yicha |
 | Kategoriya checkbox | `category=phones` | id yoki slug |
-| Brend checkbox | `brand=apple` | id yoki slug |
+| Brend checkbox | `brand=apple-5&brand=huawei` | id yoki slug; bir nechtasi: parametrni takrorlang yoki `brand=apple-5,huawei` |
 | Narx slider | `minPrice` `maxPrice` | narx oralig‘i |
 | Faqat borlari | `stock=in` | omborda bor |
 | Featured | `featured=true` | vitrina |

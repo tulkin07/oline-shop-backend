@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
@@ -12,10 +12,21 @@ export class ProductQueryDto extends PaginationQueryDto {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'Brand id yoki slug. Bir nechta brend: brand=apple-5&brand=huawei yoki brand=apple-5,huawei',
+  })
   @IsOptional()
-  @IsString()
-  brand?: string;
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) return undefined;
+    const values = Array.isArray(value) ? value : [value];
+    return values
+      .flatMap((item) => String(item).split(','))
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  })
+  @IsString({ each: true })
+  brand?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()

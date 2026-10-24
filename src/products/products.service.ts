@@ -432,12 +432,14 @@ export class ProductsService {
       if (category) where.categoryId = category.id;
       else where.categoryId = 'none';
     }
-    if (query.brand) {
-      const brand = await this.prisma.brand.findFirst({
-        where: { OR: [{ id: query.brand }, { slug: query.brand }] },
+    if (query.brand?.length) {
+      const brands = await this.prisma.brand.findMany({
+        where: { OR: [{ id: { in: query.brand } }, { slug: { in: query.brand } }] },
+        select: { id: true },
       });
-      if (brand) where.brandId = brand.id;
-      else where.brandId = 'none';
+      where.brandId = brands.length
+        ? { in: brands.map((brand) => brand.id) }
+        : 'none';
     }
     if (query.minPrice !== undefined || query.maxPrice !== undefined) {
       where.price = {
