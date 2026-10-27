@@ -301,6 +301,19 @@ Query — filtr panelining har bir elementi:
 
 Karta bosilsa → product detail.
 
+### `inWishlist` — yurakcha holati
+
+Har bir mahsulot kartasida `inWishlist: true/false` maydoni bor (`GET /products`, `/products/top`, `/products/best-selling`, `/products/:id` da):
+
+- Mijoz **login qilgan bo‘lsa**, so‘rovga `Authorization: Bearer <token>` qo‘shing — backend shu mijoz wishlistini tekshirib, to‘g‘ri qiymat qaytaradi.
+- Tokensiz (mehmon) hamma mahsulotda `false` keladi. Buziq/muddati o‘tgan token ham xato bermaydi — oddiy mehmondek javob qaytadi.
+
+```json
+{ "id": "...", "name": "iPhone 14", "inWishlist": true, ... }
+```
+
+Yurakcha bosilganda: `POST /wishlist/:productId` (qo‘shish) yoki `DELETE /wishlist/:productId` (olib tashlash), keyin ro‘yxatni qayta oling.
+
 ## `GET /products/top` — Top Products
 
 - **Qayeri:** bosh sahifadagi **“Top Products”** qatori (hero pastidagi vitrina)

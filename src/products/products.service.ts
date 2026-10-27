@@ -54,7 +54,7 @@ export class ProductsService {
     return serializeProduct(product);
   }
 
-  async findPublic(query: ProductQueryDto) {
+  async findPublic(query: ProductQueryDto, userId?: string) {
     const { skip, take, page, limit } = getPagination(query);
     const where = await this.buildWhere(query, true);
     const orderBy = this.buildOrder(query);
@@ -74,8 +74,12 @@ export class ProductsService {
         },
       }),
     ]);
+    const wished = await this.wishlistProductIds(
+      userId,
+      rows.map((p) => p.id),
+    );
     return paginated(
-      rows.map((p) => serializeProduct(p)),
+      rows.map((p) => ({ ...serializeProduct(p), inWishlist: wished.has(p.id) })),
       total,
       page,
       limit,
@@ -109,7 +113,7 @@ export class ProductsService {
     );
   }
 
-  async findPublicOne(idOrSlug: string) {
+  async findPublicOne(idOrSlug: string, userId?: string) {
     const product = await this.prisma.product.findFirst({
       where: {
         deletedAt: null,
@@ -134,10 +138,14 @@ export class ProductsService {
       where: { id: product.id },
       data: { viewsCount: { increment: 1 } },
     });
-    return serializeProduct({ ...product, viewsCount: product.viewsCount + 1 });
+    const wished = await this.wishlistProductIds(userId, [product.id]);
+    return {
+      ...serializeProduct({ ...product, viewsCount: product.viewsCount + 1 }),
+      inWishlist: wished.has(product.id),
+    };
   }
 
-  async findPublicTop(query: ProductQueryDto) {
+  async findPublicTop(query: ProductQueryDto, userId?: string) {
     const { skip, take, page, limit } = getPagination(query);
     const where = await this.buildWhere(query, true);
     where.isPopular = true;
@@ -157,10 +165,19 @@ export class ProductsService {
         },
       }),
     ]);
-    return paginated(rows.map((p) => serializeProduct(p)), total, page, limit);
+    const wished = await this.wishlistProductIds(
+      userId,
+      rows.map((p) => p.id),
+    );
+    return paginated(
+      rows.map((p) => ({ ...serializeProduct(p), inWishlist: wished.has(p.id) })),
+      total,
+      page,
+      limit,
+    );
   }
 
-  async findPublicBestSelling(query: ProductQueryDto) {
+  async findPublicBestSelling(query: ProductQueryDto, userId?: string) {
     const { skip, take, page, limit } = getPagination(query);
     const where = await this.buildWhere(query, true);
     where.isPopular = false;
@@ -185,12 +202,29 @@ export class ProductsService {
         (sold.get(b.id)?.quantity ?? 0) - (sold.get(a.id)?.quantity ?? 0) ||
         b.createdAt.getTime() - a.createdAt.getTime(),
     );
+    const wished = await this.wishlistProductIds(
+      userId,
+      rows.map((p) => p.id),
+    );
     const sliced = rows.slice(skip, skip + take).map((p) => ({
       ...serializeProduct(p),
       totalSold: sold.get(p.id)?.quantity ?? 0,
       soldRevenue: roundMoney(sold.get(p.id)?.total ?? 0),
+      inWishlist: wished.has(p.id),
     }));
     return paginated(sliced, total, page, limit);
+  }
+
+  private async wishlistProductIds(
+    userId: string | undefined,
+    productIds: string[],
+  ): Promise<Set<string>> {
+    if (!userId || productIds.length === 0) return new Set();
+    const items = await this.prisma.wishlistItem.findMany({
+      where: { wishlist: { userId }, productId: { in: productIds } },
+      select: { productId: true },
+    });
+    return new Set(items.map((item) => item.productId));
   }
 
   private async soldByProductId() {
