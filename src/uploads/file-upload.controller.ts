@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { Request } from 'express';
+import { absoluteFileUrl, requestOrigin } from '../common/http/url';
 import { JwtAdminGuard } from '../common/guards/jwt-admin.guard';
 import { UploadsService } from './uploads.service';
 
@@ -78,28 +79,9 @@ export class FileUploadController {
         ? req.body.folder.trim()
         : 'misc';
     const saved = await this.uploads.upload(file, folder);
-    const origin = this.requestOrigin(req);
 
     return {
-      url: `${origin}${saved.url}`,
+      url: absoluteFileUrl(saved.url, requestOrigin(req)),
     };
-  }
-
-  private requestOrigin(req: Request): string {
-    const fromEnv = process.env.APP_URL?.replace(/\/$/, '');
-    if (fromEnv) {
-      return fromEnv;
-    }
-    const proto = (req.get('x-forwarded-proto') ?? req.protocol ?? 'https')
-      .split(',')[0]
-      .trim();
-    const host = (
-      req.get('x-forwarded-host') ??
-      req.get('host') ??
-      'localhost:3000'
-    )
-      .split(',')[0]
-      .trim();
-    return `${proto}://${host}`;
   }
 }

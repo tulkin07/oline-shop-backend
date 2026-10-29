@@ -732,6 +732,29 @@ Agar sahifalar bo‘lak-bo‘lak bo‘lsa, alohida API larni ishlating (yuqorida
 
 ---
 
+# 21. ACCOUNT (KABINET) MENYUSI
+
+Sahifa: `/account` — login qilgan mijozning shaxsiy kabineti. Sidebar menyu:
+
+| # | Menyu | Route | Asosiy API | Nima ko‘rinadi |
+|---|-------|-------|------------|----------------|
+| 1 | **Umumiy** (Dashboard) | `/account` | `GET /customers/me` | Salom karta (ism, avatar), statistika: `totalOrders`, `totalSpent`, oxirgi buyurtma, qisqa wishlist |
+| 2 | **Buyurtmalarim** | `/account/orders` | `GET /orders` | Orderlar jadvali (raqam, sana, status, summa). Detail: `GET /orders/:id`; tugmalar: `POST /orders/:id/cancel`, `POST /orders/:id/return` |
+| 3 | **Sevimlilar** | `/account/wishlist` | `GET /wishlist` | Mahsulot kartalari; olib tashlash: `DELETE /wishlist/:productId`; savatga: `POST /cart/items` |
+| 4 | **Manzillarim** | `/account/addresses` | `GET /customers/me/addresses` | Karta ro‘yxati; qo‘shish/tahrirlash/o‘chirish: `POST/PATCH/DELETE /customers/me/addresses(/:id)` |
+| 5 | **Reviewlarim** | `/account/reviews` | `GET /customers/me/purchased-products` | Xarid qilingan mahsulotlar + “Review yozish”: `POST /products/:id/reviews`; tahrirlash/o‘chirish: `PATCH/DELETE /reviews/:id` |
+| 6 | **Profil sozlamalari** | `/account/profile` | `GET /auth/me` | Ism/telefon formasi: `PATCH /auth/profile`; avatar: `POST /uploads/avatar`; parol: `PATCH /auth/change-password` |
+| 7 | **Chiqish** | — | `POST /auth/logout` | Sessiyani yopish, tokenlarni tozalash |
+
+**Tavsiya etilgan layout:**
+- Sidebar yuqorida: avatar + ism (`GET /auth/me`).
+- Savat va wishlist soni badge sifatida headerda ham ko‘rinadi (`GET /cart`, `GET /wishlist`).
+- 2–6 bandlar token talab qiladi; token bo‘lmasa login sahifasiga yo‘naltirish.
+
+> Eslatma: alohida `GET /customers/me/reviews` (faqat o‘z reviewlari) endpointi hozircha yo‘q — “Reviewlarim” menyusi `purchased-products` asosida ishlaydi. Kerak bo‘lsa, qo‘shib beraman.
+
+---
+
 # MIJOZ SAYTI XARITASI
 
 | Sahifa | Asosiy API |

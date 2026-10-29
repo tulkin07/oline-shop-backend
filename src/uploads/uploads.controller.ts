@@ -3,6 +3,7 @@ import {
   Controller,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -10,6 +11,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
+import { Request } from 'express';
+import { absoluteFileUrl, requestOrigin } from '../common/http/url';
 import { JwtAdminGuard } from '../common/guards/jwt-admin.guard';
 import { UploadsService } from './uploads.service';
 
@@ -44,10 +47,11 @@ export class UploadsController {
       },
     },
   })
-  @ApiOperation({ summary: 'Upload an image (local storage by default)' })
-  upload(
+  @ApiOperation({ summary: 'Upload an image, returns an absolute https URL' })
+  async upload(
     @UploadedFile() file: Express.Multer.File,
     @Query('folder') folder = 'misc',
+    @Req() req?: Request,
   ) {
     if (!file) {
       throw new BadRequestException({
@@ -61,6 +65,10 @@ export class UploadsController {
         error: 'BAD_REQUEST',
       });
     }
-    return this.uploads.upload(file, folder);
+    const saved = await this.uploads.upload(file, folder);
+    return {
+      ...saved,
+      url: absoluteFileUrl(saved.url, req ? requestOrigin(req) : undefined),
+    };
   }
 }

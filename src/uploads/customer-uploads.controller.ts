@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -9,7 +10,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
+import { Request } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { absoluteFileUrl, requestOrigin } from '../common/http/url';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthUser } from '../common/types/auth';
 import { PrismaService } from '../prisma/prisma.service';
@@ -45,6 +48,7 @@ export class CustomerUploadsController {
   async avatar(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
   ) {
     if (!file || !ALLOWED.includes(file.mimetype)) {
       throw new BadRequestException({
@@ -53,10 +57,11 @@ export class CustomerUploadsController {
       });
     }
     const saved = await this.uploads.upload(file, 'avatars');
+    const url = absoluteFileUrl(saved.url, requestOrigin(req));
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { avatar: saved.url },
+      data: { avatar: url },
     });
-    return saved;
+    return { ...saved, url };
   }
 }
