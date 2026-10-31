@@ -62,6 +62,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.error(exception.message, exception.stack);
     }
 
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      this.logger.error(
+        'Unhandled server error',
+        exception instanceof Error ? exception.stack : String(exception),
+      );
+    }
+
     response.status(status).json({
       success: false,
       message,

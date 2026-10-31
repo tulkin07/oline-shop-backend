@@ -509,10 +509,30 @@ Sahifa ochilganda:
 - **Qayeri:** yetkazish narxi / bepul yetkazish chegarasi
 - **Nima uchun:** jami = savat subtotal + delivery (threshold dan oshsa 0). Backend baribir qayta hisoblaydi.
 
+## `GET /geo/regions` — viloyatlar (yangi manzil formasi uchun)
+
+- **Qayeri:** manzil formasidagi **Viloyat (State/Region)** dropdown
+- Login shart emas. 14 ta viloyat: `[{ id, name, districtsCount }]`.
+
+## `GET /geo/regions/:regionId/districts` — tumanlar
+
+- **Qayeri:** viloyat tanlanganda **Tuman (District)** dropdown
+- Masalan: `/geo/regions/toshkent-shahri/districts` → `{ region, districts: [{ id, name, mahallasCount }] }`
+
+## `GET /geo/regions/:regionId/districts/:districtId/mahallas` — mahallalar
+
+- **Qayeri:** tuman tanlanganda **Mahalla** dropdown (ixtiyoriy)
+- Masalan: `/geo/regions/toshkent-shahri/districts/yunusobod/mahallas` → `{ region, district, mahallas: [...] }`
+- **Eslatma:** mahalla ro‘yxati hozircha qisman (Toshkent shahri namunasi). To‘liq rasmiy dataset `src/geo/uzbekistan-geo.data.ts` dagi `MAHALLAS` mapiga qo‘shiladi.
+
+Dropdown qiymatlarini `region` / `district` maydonlariga **name** ko‘rinishida yozing (masalan `"Toshkent shahri"`, `"Yunusobod"`) — snapshot manzilga shu nomlar tushadi.
+
 ## `POST /orders`
 
 - **Qayeri:** **Buyurtma berish** tugmasi
 - **Nima uchun:** savatdan order yaratish, stock reserve, savatni tozalash. Narxni frontend yubormaydi.
+
+**1-usul — saqlangan manzil:**
 
 ```json
 {
@@ -521,9 +541,47 @@ Sahifa ochilganda:
 }
 ```
 
-Muvaffaqiyat → `/orders/:id` (kelgan order).
+**2-usul — checkout formasidagi yangi manzil (rasmdagi forma):**
 
-Yangi manzil kerak bo‘lsa avval address create (pastda).
+```json
+{
+  "address": {
+    "title": "Uy",
+    "firstName": "Dilshod",
+    "lastName": "Rahimov",
+    "phone": "+998901112233",
+    "region": "Toshkent shahri",
+    "city": "Toshkent",
+    "district": "Yunusobod",
+    "street": "Amir Temur shoh ko‘chasi",
+    "house": "12A",
+    "apartment": "34",
+    "postalCode": "100000",
+    "comment": "Domofon kodi: 12"
+  },
+  "saveAddress": true,
+  "notes": "Qo‘ng‘iroq qiling"
+}
+```
+
+| Forma maydoni | API maydoni |
+| --- | --- |
+| Country | — (doim O‘zbekiston, yuborilmaydi) |
+| First / Last Name | `address.firstName` / `address.lastName` |
+| Street Address | `address.street` + `address.house` |
+| Apartment, suite | `address.apartment` (ixtiyoriy) |
+| Town / City | `address.city` |
+| District (Tuman) | `address.district` (`/geo` dan) |
+| State / Region (Viloyat) | `address.region` (`/geo` dan) |
+| ZIP | `address.postalCode` (ixtiyoriy) |
+| Phone | `address.phone` |
+| Email | yuborilmaydi — user profilidan olinadi (`customerSnapshot`) |
+
+- `addressId` va `address` dan **faqat bittasi** yuboriladi (ikkalasi ham bo‘lmasa 422).
+- `saveAddress` (default `true`) — `address` profilga saqlanadi (keyingi safar 1-usul ishlaydi); `false` bo‘lsa faqat shu buyurtmaga yoziladi.
+- Istalgan holatda manzil `addressSnapshot` ga nusxalanadi — keyin manzil o‘zgarsa ham buyurtma tarixi o‘zgarmaydi.
+
+Muvaffaqiyat → `/orders/:id` (kelgan order).
 
 ---
 

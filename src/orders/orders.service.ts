@@ -39,12 +39,44 @@ export class OrdersService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  private buildAddressSnapshot(address: {
+    title: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    region: string;
+    city: string;
+    district: string;
+    street: string;
+    house: string;
+    apartment?: string | null;
+    postalCode?: string | null;
+    comment?: string | null;
+  }): Prisma.InputJsonValue {
+    return {
+      title: address.title,
+      firstName: address.firstName,
+      lastName: address.lastName,
+      phone: address.phone,
+      region: address.region,
+      city: address.city,
+      district: address.district,
+      street: address.street,
+      house: address.house,
+      apartment: address.apartment ?? null,
+      postalCode: address.postalCode ?? null,
+      comment: address.comment ?? null,
+    };
+  }
+
   async create(userId: string, dto: CreateOrderDto) {
-    const [user, address, cart, settings] = await Promise.all([
+    const [user, savedAddress, cart, settings] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({ where: { id: userId } }),
-      this.prisma.address.findFirst({
-        where: { id: dto.addressId, userId },
-      }),
+      dto.addressId
+        ? this.prisma.address.findFirst({
+            where: { id: dto.addressId, userId },
+          })
+        : Promise.resolve(null),
       this.prisma.cart.findUnique({
         where: { userId },
         include: {
@@ -58,7 +90,7 @@ export class OrdersService {
       }),
       this.settings.get(),
     ]);
-    if (!address) {
+    if (!dto.address && !savedAddress) {
       throw new BadRequestException({
         message: 'Delivery address not found',
         error: 'BAD_REQUEST',
@@ -71,7 +103,28 @@ export class OrdersService {
       });
     }
 
-    const order = await this.prisma.$transaction(async (tx) => {
+    let addressSnapshot: Prisma.InputJsonValue;
+    if (dto.address) {
+      addressSnapshot = this.buildAddressSnapshot(dto.address);
+      if (dto.saveAddress ?? true) {
+        const count = await this.prisma.address.count({ where: { userId } });
+        const isDefault = dto.address.isDefault ?? count === 0;
+        if (isDefault) {
+          await this.prisma.address.updateMany({
+            where: { userId },
+            data: { isDefault: false },
+          });
+        }
+        await this.prisma.address.create({
+          data: { ...dto.address, userId, isDefault },
+        });
+      }
+    } else {
+      addressSnapshot = this.buildAddressSnapshot(savedAddress!);
+    }
+
+    const order = await this.prisma.$transaction(
+      async (tx) => {
       let subtotal = 0;
       const prepared: Array<{
         productId: string;
@@ -153,20 +206,7 @@ export class OrdersService {
           deliveryFee,
           total,
           notes: dto.notes,
-          addressSnapshot: {
-            title: address.title,
-            firstName: address.firstName,
-            lastName: address.lastName,
-            phone: address.phone,
-            region: address.region,
-            city: address.city,
-            district: address.district,
-            street: address.street,
-            house: address.house,
-            apartment: address.apartment,
-            postalCode: address.postalCode,
-            comment: address.comment,
-          },
+          addressSnapshot,
           customerSnapshot: {
             firstName: user.firstName,
             lastName: user.lastName,
@@ -219,7 +259,10 @@ export class OrdersService {
         tx,
       );
       return created;
-    });
+      },
+      // Neon pooler + high-latency clients need more than the 5s default.
+      { timeout: 20000, maxWait: 10000 },
+    );
 
     return serializeOrder(order);
   }
@@ -363,7 +406,8 @@ export class OrdersService {
     changedBy: string,
     adminId?: string,
   ) {
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(
+      async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: { items: true },
@@ -477,7 +521,10 @@ export class OrdersService {
         where: { id: orderId },
         include: orderInclude,
       });
-    });
+      },
+      // Neon pooler + high-latency clients need more than the 5s default.
+      { timeout: 20000, maxWait: 10000 },
+    );
     return serializeOrder(result);
   }
 }

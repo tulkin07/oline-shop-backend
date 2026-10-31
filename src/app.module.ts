@@ -14,6 +14,7 @@ import { BrandsModule } from './brands/brands.module';
 import { CartModule } from './cart/cart.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CustomersModule } from './customers/customers.module';
+import { GeoModule } from './geo/geo.module';
 import { HomePromosModule } from './home-promos/home-promos.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -49,6 +50,7 @@ import { HealthController } from './health.controller';
     BannersModule,
     HomePromosModule,
     InventoryModule,
+    GeoModule,
     AnalyticsModule,
     NotificationsModule,
     SettingsModule,
