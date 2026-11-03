@@ -44,11 +44,10 @@ export class OrdersService {
     lastName: string;
     phone: string;
     region: string;
-    city: string;
     district: string;
     mahalla?: string | null;
     street: string;
-    house: string;
+    house?: string | null;
     apartment?: string | null;
     comment?: string | null;
   }): Prisma.InputJsonValue {
@@ -57,11 +56,10 @@ export class OrdersService {
       lastName: address.lastName,
       phone: address.phone,
       region: address.region,
-      city: address.city,
       district: address.district,
       mahalla: address.mahalla ?? null,
       street: address.street,
-      house: address.house,
+      house: address.house ?? null,
       apartment: address.apartment ?? null,
       comment: address.comment ?? null,
     };

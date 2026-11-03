@@ -30,10 +30,13 @@ export class CheckoutAddressDto {
   @IsNotEmpty()
   region: string;
 
-  @ApiProperty({ example: 'Toshkent' })
+  @ApiPropertyOptional({
+    example: 'Toshkent',
+    description: 'Ishlatilmaydi — checkoutda Shahar so‘ralmaydi',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  city: string;
+  city?: string;
 
   @ApiProperty({ example: 'Yunusobod tumani' })
   @IsString()
@@ -50,10 +53,10 @@ export class CheckoutAddressDto {
   @IsNotEmpty()
   street: string;
 
-  @ApiProperty({ example: '12A' })
+  @ApiPropertyOptional({ example: '12A' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  house: string;
+  house?: string;
 
   @ApiPropertyOptional({ example: '34' })
   @IsOptional()

@@ -535,7 +535,6 @@ Dropdownda `name` ni forma maydoniga yozing (`region` / `district` / `mahalla`).
     "lastName": "Akhmadov",
     "phone": "+998931908097",
     "region": "Toshkent shahri",
-    "city": "Toshkent",
     "district": "Yunusobod tumani",
     "mahalla": "Bogishamol",
     "street": "Amir Temur",
@@ -552,11 +551,11 @@ Dropdownda `name` ni forma maydoniga yozing (`region` / `district` / `mahalla`).
 | Familiya | `address.lastName` | ha |
 | Telefon | `address.phone` | ha |
 | Viloyat | `address.region` | ha |
-| Shahar | `address.city` | ha |
 | Tuman | `address.district` | ha |
 | Mahalla | `address.mahalla` | yo‘q |
 | Ko‘cha | `address.street` | ha |
-| Uy | `address.house` | ha |
+| Uy | `address.house` | yo‘q |
+| Shahar | — | **yo‘q, yuborilmaydi** |
 | Xonadon | `address.apartment` | yo‘q |
 | Izoh kuryer uchun | `address.comment` | yo‘q |
 | Manzil nomi | — | **yo‘q, yuborilmaydi** |
