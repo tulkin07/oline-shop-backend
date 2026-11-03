@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -92,9 +93,9 @@ export class AdminAuthService {
     });
     const valid = await this.hash.compare(dto.currentPassword, admin.password);
     if (!valid) {
-      throw new UnauthorizedException({
+      throw new BadRequestException({
         message: 'Current password is incorrect',
-        error: 'UNAUTHORIZED',
+        error: 'BAD_REQUEST',
       });
     }
     await this.prisma.admin.update({
