@@ -49,7 +49,12 @@ export class CustomersService {
       });
     }
     const address = await this.prisma.address.create({
-      data: { ...dto, userId, isDefault },
+      data: {
+        ...dto,
+        title: dto.title?.trim() || 'Uy',
+        userId,
+        isDefault,
+      },
     });
     await this.activity.log(userId, ActivityType.ADDRESS_ADDED, {
       addressId: address.id,

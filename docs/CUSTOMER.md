@@ -499,89 +499,72 @@ Sahifa ochilganda:
 - **Qayeri:** o‘ngdagi **buyurtma xulosasi** (mahsulotlar, subtotal)
 - **Nima uchun:** nima sotib olinayotganini ko‘rsatish. Bo‘sh savat bo‘lsa checkoutga kiritmang.
 
-## `GET /customers/me/addresses`
-
-- **Qayeri:** chapdagi **manzil tanlash** (radio: Uy, Ish)
-- **Nima uchun:** qayerga yetkazish. `isDefault` ni oldindan belgilang.
-
 ## `GET /settings`
 
 - **Qayeri:** yetkazish narxi / bepul yetkazish chegarasi
 - **Nima uchun:** jami = savat subtotal + delivery (threshold dan oshsa 0). Backend baribir qayta hisoblaydi.
 
-## `GET /geo/regions` — viloyatlar (yangi manzil formasi uchun)
+## `GET /geo/regions` — viloyatlar
 
-- **Qayeri:** manzil formasidagi **Viloyat (State/Region)** dropdown
-- Login shart emas. 14 ta viloyat: `[{ id, name, districtsCount }]`.
+- **Qayeri:** **Viloyat** dropdown
+- Login shart emas. 14 ta: `[{ id, name, districtsCount }]`
 
 ## `GET /geo/regions/:regionId/districts` — tumanlar
 
-- **Qayeri:** viloyat tanlanganda **Tuman (District)** dropdown
-- Masalan: `/geo/regions/toshkent-shahri/districts` → `{ region, districts: [{ id, name, mahallasCount }] }`
+- **Qayeri:** viloyat tanlanganda **Tuman** dropdown
+- Masalan: `/geo/regions/toshkent-shahri/districts`
+- Javob: `{ region, districts: [{ id, name, mahallasCount }] }`
 
 ## `GET /geo/regions/:regionId/districts/:districtId/mahallas` — mahallalar
 
 - **Qayeri:** tuman tanlanganda **Mahalla** dropdown (ixtiyoriy)
-- Masalan: `/geo/regions/toshkent-shahri/districts/yunusobod/mahallas` → `{ region, district, mahallas: [...] }`
-- **Eslatma:** mahalla ro‘yxati hozircha qisman (Toshkent shahri namunasi). To‘liq rasmiy dataset `src/geo/uzbekistan-geo.data.ts` dagi `MAHALLAS` mapiga qo‘shiladi.
+- Masalan: `/geo/regions/toshkent-shahri/districts/yunusobod-tumani/mahallas`
+- Javob: `{ region, district, mahallas: [{ id, name }] }` (~9800 mahalla, tuman kesimida)
 
-Dropdown qiymatlarini `region` / `district` maydonlariga **name** ko‘rinishida yozing (masalan `"Toshkent shahri"`, `"Yunusobod"`) — snapshot manzilga shu nomlar tushadi.
+Dropdownda `name` ni forma maydoniga yozing (`region` / `district` / `mahalla`).
 
 ## `POST /orders`
 
 - **Qayeri:** **Buyurtma berish** tugmasi
-- **Nima uchun:** savatdan order yaratish, stock reserve, savatni tozalash. Narxni frontend yubormaydi.
-
-**1-usul — saqlangan manzil:**
-
-```json
-{
-  "addressId": "ADDRESS_UUID",
-  "notes": "Qo‘ng‘iroq qiling"
-}
-```
-
-**2-usul — checkout formasidagi yangi manzil (rasmdagi forma):**
+- **Nima uchun:** savatdan order yaratish. `addressId` **yo‘q** — faqat rasmdagi forma. Narxni frontend yubormaydi.
 
 ```json
 {
   "address": {
-    "title": "Uy",
-    "firstName": "Dilshod",
-    "lastName": "Rahimov",
-    "phone": "+998901112233",
+    "firstName": "Tulkin",
+    "lastName": "Akhmadov",
+    "phone": "+998931908097",
     "region": "Toshkent shahri",
     "city": "Toshkent",
-    "district": "Yunusobod",
-    "street": "Amir Temur shoh ko‘chasi",
+    "district": "Yunusobod tumani",
+    "mahalla": "Bogishamol",
+    "street": "Amir Temur",
     "house": "12A",
     "apartment": "34",
-    "postalCode": "100000",
-    "comment": "Domofon kodi: 12"
-  },
-  "saveAddress": true,
-  "notes": "Qo‘ng‘iroq qiling"
+    "comment": "Qo‘ng‘iroq qiling, darvoza kodi 12"
+  }
 }
 ```
 
-| Forma maydoni | API maydoni |
-| --- | --- |
-| Country | — (doim O‘zbekiston, yuborilmaydi) |
-| First / Last Name | `address.firstName` / `address.lastName` |
-| Street Address | `address.street` + `address.house` |
-| Apartment, suite | `address.apartment` (ixtiyoriy) |
-| Town / City | `address.city` |
-| District (Tuman) | `address.district` (`/geo` dan) |
-| State / Region (Viloyat) | `address.region` (`/geo` dan) |
-| ZIP | `address.postalCode` (ixtiyoriy) |
-| Phone | `address.phone` |
-| Email | yuborilmaydi — user profilidan olinadi (`customerSnapshot`) |
+| Forma | API | Majburiy |
+| --- | --- | --- |
+| Ism | `address.firstName` | ha |
+| Familiya | `address.lastName` | ha |
+| Telefon | `address.phone` | ha |
+| Viloyat | `address.region` | ha |
+| Shahar | `address.city` | ha |
+| Tuman | `address.district` | ha |
+| Mahalla | `address.mahalla` | yo‘q |
+| Ko‘cha | `address.street` | ha |
+| Uy | `address.house` | ha |
+| Xonadon | `address.apartment` | yo‘q |
+| Izoh kuryer uchun | `address.comment` | yo‘q |
+| Manzil nomi | — | **yo‘q, yuborilmaydi** |
+| Email | — | user profilidan (`customerSnapshot`) |
 
-- `addressId` va `address` dan **faqat bittasi** yuboriladi (ikkalasi ham bo‘lmasa 422).
-- `saveAddress` (default `true`) — `address` profilga saqlanadi (keyingi safar 1-usul ishlaydi); `false` bo‘lsa faqat shu buyurtmaga yoziladi.
-- Istalgan holatda manzil `addressSnapshot` ga nusxalanadi — keyin manzil o‘zgarsa ham buyurtma tarixi o‘zgarmaydi.
+Manzil `addressSnapshot` ga yoziladi (buyurtma tarixi). Profil manzillariga avtomatik saqlanmaydi.
 
-Muvaffaqiyat → `/orders/:id` (kelgan order).
+Muvaffaqiyat → `/orders/:id`.
 
 ---
 

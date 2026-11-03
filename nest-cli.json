@@ -4,6 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
+    "assets": ["geo/*.json"],
     "plugins": [
       {
         "name": "@nestjs/swagger",

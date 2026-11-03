@@ -26,7 +26,7 @@ export class GeoController {
 
   @Public()
   @Get('regions/:regionId/districts/:districtId/mahallas')
-  @ApiOperation({ summary: 'Mahallas of a district (partial data)' })
+  @ApiOperation({ summary: 'Mahallas of a district' })
   mahallas(
     @Param('regionId') regionId: string,
     @Param('districtId') districtId: string,

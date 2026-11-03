@@ -40,43 +40,36 @@ export class OrdersService {
   ) {}
 
   private buildAddressSnapshot(address: {
-    title: string;
     firstName: string;
     lastName: string;
     phone: string;
     region: string;
     city: string;
     district: string;
+    mahalla?: string | null;
     street: string;
     house: string;
     apartment?: string | null;
-    postalCode?: string | null;
     comment?: string | null;
   }): Prisma.InputJsonValue {
     return {
-      title: address.title,
       firstName: address.firstName,
       lastName: address.lastName,
       phone: address.phone,
       region: address.region,
       city: address.city,
       district: address.district,
+      mahalla: address.mahalla ?? null,
       street: address.street,
       house: address.house,
       apartment: address.apartment ?? null,
-      postalCode: address.postalCode ?? null,
       comment: address.comment ?? null,
     };
   }
 
   async create(userId: string, dto: CreateOrderDto) {
-    const [user, savedAddress, cart, settings] = await Promise.all([
+    const [user, cart, settings] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({ where: { id: userId } }),
-      dto.addressId
-        ? this.prisma.address.findFirst({
-            where: { id: dto.addressId, userId },
-          })
-        : Promise.resolve(null),
       this.prisma.cart.findUnique({
         where: { userId },
         include: {
@@ -90,12 +83,6 @@ export class OrdersService {
       }),
       this.settings.get(),
     ]);
-    if (!dto.address && !savedAddress) {
-      throw new BadRequestException({
-        message: 'Delivery address not found',
-        error: 'BAD_REQUEST',
-      });
-    }
     if (!cart || cart.items.length === 0) {
       throw new BadRequestException({
         message: 'Cart is empty',
@@ -103,25 +90,7 @@ export class OrdersService {
       });
     }
 
-    let addressSnapshot: Prisma.InputJsonValue;
-    if (dto.address) {
-      addressSnapshot = this.buildAddressSnapshot(dto.address);
-      if (dto.saveAddress ?? true) {
-        const count = await this.prisma.address.count({ where: { userId } });
-        const isDefault = dto.address.isDefault ?? count === 0;
-        if (isDefault) {
-          await this.prisma.address.updateMany({
-            where: { userId },
-            data: { isDefault: false },
-          });
-        }
-        await this.prisma.address.create({
-          data: { ...dto.address, userId, isDefault },
-        });
-      }
-    } else {
-      addressSnapshot = this.buildAddressSnapshot(savedAddress!);
-    }
+    const addressSnapshot = this.buildAddressSnapshot(dto.address);
 
     const order = await this.prisma.$transaction(
       async (tx) => {
